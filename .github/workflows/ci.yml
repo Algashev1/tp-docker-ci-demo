@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+    - name: Настройки
+      run: cp .env.example .env
+    - name: Сборка и запуск
+      run: docker compose up -d --build --wait
+    - name: Тесты бэкенда
+      run: docker compose exec -T backend pytest -v
+    - name: Smoke-тест
+      run: |
+        curl -f http://localhost:8080/health
+        curl -f http://localhost:3000
+        curl -f http://localhost:3000/api/news
+    - name: Логи при падении
+      if: failure()
+      run: docker compose logs
+    - name: Остановить
+      if: always()
+      run: docker compose down -v
