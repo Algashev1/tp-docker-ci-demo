@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>Новостной агрегатор</title></head>
+<body>
+  <h1>Новостной агрегатор</h1>
+  <ul id="news"></ul>
+  <script>
+    fetch("/api/news").then(r => r.json()).then(items => {
+      document.getElementById("news").innerHTML = items.map(n => "<li>" + n.title + "</li>").join("");
+    });
+  </script>
+</body>
+</html>
