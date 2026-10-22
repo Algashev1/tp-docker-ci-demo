@@ -12,6 +12,16 @@ docker compose up -d --build
 - Сайт: http://localhost:3000
 - API: http://localhost:8080/health
 
+## Запуск готовой версии без сборки
+
+После каждого зелёного прогона в `main` образы публикуются в GitHub Container Registry:
+
+```bash
+cp .env.example .env
+docker compose pull backend frontend
+docker compose up -d --no-build
+```
+
 ## Тесты
 
 ```bash
