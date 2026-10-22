@@ -1,10 +1,21 @@
 #cloud-config
-# Вставляется в поле cloud-init при создании ВМ (Ubuntu 24.04).
+# Paste into the Cloud.ru 'cloud_init' field instead of the whole template (Ubuntu 24.04).
+# Replace the repo name and the SSH key. Keep this file ASCII-only. See deploy/README.md
+hostname: tp-stand
+users:
+  - default
+  - name: stand
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA... your-public-key
+
 package_update: true
 packages:
   - docker.io
   - docker-compose-v2
   - curl
+
 write_files:
   - path: /etc/docker/daemon.json
     content: |
@@ -12,6 +23,7 @@ write_files:
   - path: /etc/cron.d/app-deploy
     content: |
       */2 * * * * root curl -fsSL https://raw.githubusercontent.com/Algashev1/tp-docker-ci-demo/main/deploy/pull.sh | sh >> /var/log/app-deploy.log 2>&1
+
 runcmd:
   - mkdir -p /opt/app
   - sh -c 'echo "DB_PASSWORD=$(openssl rand -hex 16)" > /opt/app/.env && echo "FRONT_PORT=80" >> /opt/app/.env'
