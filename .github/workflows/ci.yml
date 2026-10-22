@@ -30,3 +30,27 @@ jobs:
     - name: Остановить
       if: always()
       run: docker compose down -v
+
+  publish:
+    needs: stack
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Вход в GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Сборка образов
+      run: |
+        cp .env.example .env
+        docker compose build backend frontend
+    - name: Публикация образов
+      run: |
+        docker compose push backend frontend
+        for s in backend frontend; do
+          img=ghcr.io/algashev1/tp-docker-ci-demo-$s
+          docker tag $img:latest $img:${{ github.sha }}
+          docker push $img:${{ github.sha }}
+        done
