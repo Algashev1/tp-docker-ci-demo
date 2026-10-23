@@ -1,36 +1,36 @@
 <!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Трекер ревью и рефайнментов</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header class="top">
-    <div class="brand">
-      <span class="logo">TP</span>
-      <div>
-        <div class="title">Ревью и рефайнменты</div>
-        <div class="subtitle">Технологии программирования</div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Трекер ревью и бэклог рефайнментов</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <span class="logo">TP</span>
+        <div>
+          <div class="title">Ревью и рефайнменты</div>
+          <div class="subtitle">Технологии программирования</div>
+        </div>
       </div>
-    </div>
-    <nav id="nav">
-      <a href="#/calendar" data-view="calendar">Календарь</a>
-      <a href="#/teams" data-view="teams">Команды</a>
-      <a href="#/login" id="login-link">Войти</a>
-      <button class="ghost" id="logout" hidden>Выйти</button>
-    </nav>
-  </header>
+      <nav id="nav">
+        <a href="#/calendar" data-view="calendar">Календарь</a>
+        <a href="#/teams" data-view="teams">Команды</a>
+        <a href="#/login" id="login-link">Войти</a>
+        <button class="ghost" id="logout" hidden>Выйти</button>
+      </nav>
+    </header>
 
-  <main id="app"></main>
+    <main id="app"></main>
 
-  <dialog id="modal">
-    <form method="dialog" class="modal-close"><button aria-label="Закрыть">×</button></form>
-    <div id="modal-body"></div>
-  </dialog>
+    <dialog id="modal">
+      <form method="dialog" class="modal-close"><button aria-label="Закрыть">×</button></form>
+      <div id="modal-body"></div>
+    </dialog>
 
-  <div id="toast" role="status" hidden></div>
-  <script src="app.js"></script>
-</body>
+    <div id="toast" role="status" hidden></div>
+    <script src="app.js"></script>
+  </body>
 </html>
