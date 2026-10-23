@@ -8,7 +8,9 @@ const DOW = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 const app = document.getElementById("app");
 const modal = document.getElementById("modal");
 const modalBody = document.getElementById("modal-body");
-const state = { month: startOfMonth(new Date()), teams: [] };
+const state = { month: startOfMonth(new Date()), teams: [], admin: false };
+// Кнопки редактирования видит только преподаватель (после входа)
+const adm = (html) => (state.admin ? html : "");
 
 // ---------- утилиты ----------
 function esc(s) {
@@ -38,7 +40,7 @@ async function api(path, options = {}) {
     body: options.body ? JSON.stringify(options.body) : undefined,
     credentials: "same-origin",
   });
-  if (res.status === 401 && !path.startsWith("/api/auth")) { showAuth(); throw new Error("Нужно войти"); }
+  if (res.status === 401 && !path.startsWith("/api/auth")) { closeModal(); location.hash = "#/login"; throw new Error("Нужно войти"); }
   if (!res.ok) {
     let msg = `Ошибка ${res.status}`;
     try { const data = await res.json(); msg = typeof data.detail === "string" ? data.detail : msg; } catch (e) { /* пусто */ }
@@ -51,9 +53,7 @@ function openModal(html) { modalBody.innerHTML = html; modal.showModal(); }
 function closeModal() { modal.close(); }
 
 // ---------- вход ----------
-async function showAuth() {
-  document.getElementById("nav").hidden = true;
-  const status = await api("/api/auth/status");
+async function showAuth(status) {
   const setup = !status.configured;
   app.innerHTML = `
     <div class="auth card">
@@ -73,22 +73,29 @@ async function showAuth() {
     if (setup && f.get("password") !== f.get("password2")) { err.textContent = "Пароли не совпадают"; return; }
     try {
       await api(setup ? "/api/auth/setup" : "/api/auth/login", { method: "POST", body: { password: f.get("password") } });
-      route();
+      location.hash = "#/calendar";
     } catch (ex) { err.textContent = ex.message; }
   };
 }
 
 document.getElementById("logout").onclick = async () => {
   await api("/api/auth/logout", { method: "POST" });
-  showAuth();
+  toast("Вы вышли, режим просмотра");
+  route();
 };
 
 // ---------- маршрутизация ----------
 async function route() {
   const status = await api("/api/auth/status");
-  if (!status.authenticated) return showAuth();
-  document.getElementById("nav").hidden = false;
+  state.admin = status.authenticated;
+  document.getElementById("logout").hidden = !state.admin;
+  document.getElementById("login-link").hidden = state.admin;
   const hash = location.hash || "#/calendar";
+  if (hash === "#/login") {
+    if (state.admin) { location.hash = "#/calendar"; return; }
+    document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("active", a.id === "login-link"));
+    return showAuth(status);
+  }
   document.querySelectorAll("nav a").forEach((a) => a.classList.toggle("active", hash.startsWith(a.getAttribute("href"))));
   state.teams = (await api("/api/teams")).sort((a, b) => a.name.localeCompare(b.name, "ru", { numeric: true }));
   const m = hash.match(/^#\/teams\/(\d+)/);
@@ -129,7 +136,7 @@ async function showCalendar() {
         <button class="ghost small" id="next" aria-label="Следующий месяц">›</button>
         <button class="ghost small" id="today">Сегодня</button>
       </div>
-      <button id="add-meeting" ${state.teams.length ? "" : "disabled"}>+ Встреча</button>
+      ${adm(`<button id="add-meeting" ${state.teams.length ? "" : "disabled"}>+ Встреча</button>`)}
     </div>
     <div class="layout">
       <div>
@@ -141,14 +148,14 @@ async function showCalendar() {
         ${planned.length ? `<ul>${planned.map((m) => `<li><button data-meeting="${m.id}">
           <span class="badge ${m.kind}">${KIND_SHORT[m.kind]}</span> <b>${esc(m.team_name)}</b>${m.sprint != null ? ` · спринт ${m.sprint}` : ""}
           <div class="when">${fmtDateTime(m.starts_at)}</div></button></li>`).join("")}</ul>`
-          : `<p class="muted">${state.teams.length ? "Запланированных встреч нет." : "Сначала добавьте команды на вкладке «Команды»."}</p>`}
+          : `<p class="muted">${state.teams.length ? "Запланированных встреч нет." : (state.admin ? "Сначала добавьте команды на вкладке «Команды»." : "Команд пока нет.")}</p>`}
       </aside>
     </div>`;
 
   document.getElementById("prev").onclick = () => { state.month = new Date(first.getFullYear(), first.getMonth() - 1, 1); showCalendar(); };
   document.getElementById("next").onclick = () => { state.month = new Date(first.getFullYear(), first.getMonth() + 1, 1); showCalendar(); };
   document.getElementById("today").onclick = () => { state.month = startOfMonth(new Date()); showCalendar(); };
-  document.getElementById("add-meeting").onclick = () => meetingForm();
+  if (state.admin) document.getElementById("add-meeting").onclick = () => meetingForm();
   app.querySelectorAll("[data-meeting]").forEach((b) => (b.onclick = () => showMeeting(Number(b.dataset.meeting))));
 }
 
@@ -157,10 +164,10 @@ function showTeams() {
   app.innerHTML = `
     <div class="bar">
       <h1>Команды <span class="muted">(${state.teams.length})</span></h1>
-      <div class="row">
+      ${adm(`<div class="row">
         <button class="ghost" id="bulk">Добавить списком</button>
         <button id="add-team">+ Команда</button>
-      </div>
+      </div>`)}
     </div>
     ${state.teams.length ? `<div class="teams">${state.teams.map((t) => `
       <article class="card team" data-team="${t.id}" tabindex="0">
@@ -173,9 +180,11 @@ function showTeams() {
         </dl>
         ${t.last_note ? `<div class="quote">${esc(t.last_note.length > 150 ? t.last_note.slice(0, 150) + "…" : t.last_note)}</div>` : ""}
       </article>`).join("")}</div>`
-      : `<div class="card empty">Команд пока нет. Добавьте их по одной или сразу списком.</div>`}`;
-  document.getElementById("add-team").onclick = () => teamForm();
-  document.getElementById("bulk").onclick = bulkForm;
+      : `<div class="card empty">Команд пока нет.${adm(" Добавьте их по одной или сразу списком.")}</div>`}`;
+  if (state.admin) {
+    document.getElementById("add-team").onclick = () => teamForm();
+    document.getElementById("bulk").onclick = bulkForm;
+  }
   app.querySelectorAll("[data-team]").forEach((el) => {
     el.onclick = () => (location.hash = `#/teams/${el.dataset.team}`);
     el.onkeydown = (e) => { if (e.key === "Enter") el.onclick(); };
@@ -233,7 +242,7 @@ async function showTeam(id) {
   app.innerHTML = `
     <div class="bar">
       <div><a href="#/teams" class="muted">← Все команды</a><h1>${esc(team.name)}</h1>${team.project ? `<div class="muted">${esc(team.project)}</div>` : ""}</div>
-      <div class="row"><button class="ghost" id="edit-team">Редактировать</button><button id="add-meeting">+ Встреча</button></div>
+      ${adm(`<div class="row"><button class="ghost" id="edit-team">Редактировать</button><button id="add-meeting">+ Встреча</button></div>`)}
     </div>
     ${team.members ? `<div class="card" style="margin-bottom:16px;white-space:pre-wrap">${esc(team.members)}</div>` : ""}
     ${meetings.length ? `<table>
@@ -244,9 +253,11 @@ async function showTeam(id) {
         <td class="hide-sm">${m.sprint ?? "-"}</td>
         <td><span class="badge ${m.status}">${STATUS[m.status]}</span></td>
         <td class="hide-sm">${m.notes_count}</td></tr>`).join("")}</tbody></table>`
-      : `<div class="card empty">Встреч пока нет. Запланируйте ревью и рефайнменты, можно сразу на несколько спринтов.</div>`}`;
-  document.getElementById("edit-team").onclick = () => teamForm(team);
-  document.getElementById("add-meeting").onclick = () => meetingForm(null, id);
+      : `<div class="card empty">Встреч пока нет.${adm(" Запланируйте ревью и рефайнменты, можно сразу на несколько спринтов.")}</div>`}`;
+  if (state.admin) {
+    document.getElementById("edit-team").onclick = () => teamForm(team);
+    document.getElementById("add-meeting").onclick = () => meetingForm(null, id);
+  }
   app.querySelectorAll("[data-meeting]").forEach((r) => (r.onclick = () => showMeeting(Number(r.dataset.meeting))));
 }
 
@@ -300,18 +311,19 @@ async function showMeeting(id) {
       <dt>Спринт</dt><dd>${m.sprint ?? "-"}</dd>
       <dt>Статус</dt><dd><span class="badge ${m.status}">${STATUS[m.status]}</span></dd>
     </dl>
-    <div class="row" style="margin-top:12px">
+    ${adm(`<div class="row" style="margin-top:12px">
       ${m.status !== "done" ? '<button class="small" id="mark-done">Отметить проведённой</button>' : ""}
       <button class="ghost small" id="edit">Изменить</button>
       <button class="danger small" id="delete">Удалить</button>
-    </div>
+    </div>`)}
     <h3 class="section-title">Комментарии по итогам</h3>
     ${m.notes.length ? `<ul class="notes">${m.notes.map((n) => `<li><span class="when">${fmtDateTime(n.created_at)}</span>${esc(n.text)}
-      <button class="del" data-note="${n.id}" title="Удалить комментарий">×</button></li>`).join("")}</ul>` : '<p class="muted">Комментариев пока нет.</p>'}
-    <form class="stack" id="note-form">
+      ${adm(`<button class="del" data-note="${n.id}" title="Удалить комментарий">×</button>`)}</li>`).join("")}</ul>` : '<p class="muted">Комментариев пока нет.</p>'}
+    ${adm(`<form class="stack" id="note-form">
       <textarea name="text" required maxlength="5000" placeholder="Что показали, что приняли, договорённости, что улучшить"></textarea>
       <button>Добавить комментарий</button>
-    </form>`);
+    </form>`)}`);
+  if (!state.admin) return;
 
   const update = (patch) => api(`/api/meetings/${id}`, { method: "PUT", body: { kind: m.kind, starts_at: m.starts_at, sprint: m.sprint, status: m.status, ...patch } });
   const markDone = document.getElementById("mark-done");
