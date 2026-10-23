@@ -16,12 +16,26 @@ def login(c):
     assert c.post("/api/auth/setup", json={"password": PASSWORD}).status_code == 200
 
 
-def test_api_requires_login():
+def test_read_is_public_write_requires_login():
     with client() as c:
         with db() as conn:
             conn.execute("TRUNCATE settings, sessions, teams RESTART IDENTITY CASCADE")
-        assert c.get("/api/teams").status_code == 401
         assert c.get("/api/auth/status").json() == {"configured": False, "authenticated": False}
+        assert c.get("/api/teams").status_code == 200
+        assert c.get("/api/meetings").status_code == 200
+        assert c.post("/api/teams", json={"name": "Команда 1"}).status_code == 401
+        assert c.post("/api/meetings/1/notes", json={"text": "x"}).status_code == 401
+        assert c.delete("/api/teams/1").status_code == 401
+
+
+def test_guest_sees_data_but_cannot_change_it():
+    with client() as teacher:
+        login(teacher)
+        team = teacher.post("/api/teams", json={"name": "Команда 2"}).json()
+    with client() as guest:
+        assert [t["name"] for t in guest.get("/api/teams").json()] == ["Команда 2"]
+        assert guest.put(f"/api/teams/{team['id']}", json={"name": "Взлом"}).status_code == 401
+        assert guest.get(f"/api/teams/{team['id']}").json()["name"] == "Команда 2"
 
 
 def test_setup_only_once_and_login():
