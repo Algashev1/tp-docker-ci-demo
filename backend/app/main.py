@@ -180,7 +180,7 @@ FROM teams t
 """
 
 
-@app.get("/api/teams", dependencies=[Depends(require_auth)])
+@app.get("/api/teams")
 def list_teams():
     with db() as conn:
         return conn.execute(TEAM_SELECT + " ORDER BY t.name").fetchall()
@@ -195,7 +195,7 @@ def create_team(team: TeamIn):
         ).fetchone()
 
 
-@app.get("/api/teams/{team_id}", dependencies=[Depends(require_auth)])
+@app.get("/api/teams/{team_id}")
 def get_team(team_id: int):
     with db() as conn:
         team = conn.execute(TEAM_SELECT + " WHERE t.id = %s", (team_id,)).fetchone()
@@ -256,7 +256,7 @@ def aware(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
-@app.get("/api/meetings", dependencies=[Depends(require_auth)])
+@app.get("/api/meetings")
 def list_meetings(team_id: Optional[int] = None, date_from: Optional[datetime] = None,
                   date_to: Optional[datetime] = None):
     where, params = [], []
@@ -292,7 +292,7 @@ def create_meetings(m: MeetingIn):
     return {"created": created}
 
 
-@app.get("/api/meetings/{meeting_id}", dependencies=[Depends(require_auth)])
+@app.get("/api/meetings/{meeting_id}")
 def get_meeting(meeting_id: int):
     with db() as conn:
         meeting = conn.execute(MEETING_SELECT + " WHERE m.id = %s", (meeting_id,)).fetchone()
