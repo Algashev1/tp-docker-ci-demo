@@ -23,7 +23,7 @@ jobs:
       run: |
         curl -f http://localhost:8080/health
         curl -f http://localhost:3000
-        curl -f http://localhost:3000/api/news
+        curl -f http://localhost:3000/api/auth/status
     - name: Логи при падении
       if: failure()
       run: docker compose logs
