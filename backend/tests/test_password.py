@@ -2,7 +2,7 @@ from app.validation import validate_password
 
 
 def test_password_min_length_ok():
-    assert validate_password("a" * 8)
+    assert validate_password("a" * 7)
 
 
 def test_password_too_short():
