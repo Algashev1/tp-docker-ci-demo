@@ -244,7 +244,7 @@ async function showTeam(id) {
       <div><a href="#/teams" class="muted">← Все команды</a><h1>${esc(team.name)}</h1>${team.project ? `<div class="muted">${esc(team.project)}</div>` : ""}</div>
       ${adm(`<div class="row"><button class="ghost" id="edit-team">Редактировать</button><button id="add-meeting">+ Встреча</button></div>`)}
     </div>
-    ${team.members ? `<div class="card" style="margin-bottom:16px;white-space:pre-wrap">${esc(team.members)}</div>` : ""}
+    ${team.members ? `<div class="card members">${esc(team.members)}</div>` : ""}
     ${meetings.length ? `<table>
       <thead><tr><th>Дата</th><th>Встреча</th><th class="hide-sm">Спринт</th><th>Статус</th><th class="hide-sm">Комментарии</th></tr></thead>
       <tbody>${meetings.map((m) => `<tr class="click" data-meeting="${m.id}">
@@ -311,7 +311,7 @@ async function showMeeting(id) {
       <dt>Спринт</dt><dd>${m.sprint ?? "-"}</dd>
       <dt>Статус</dt><dd><span class="badge ${m.status}">${STATUS[m.status]}</span></dd>
     </dl>
-    ${adm(`<div class="row" style="margin-top:12px">
+    ${adm(`<div class="row actions">
       ${m.status !== "done" ? '<button class="small" id="mark-done">Отметить проведённой</button>' : ""}
       <button class="ghost small" id="edit">Изменить</button>
       <button class="danger small" id="delete">Удалить</button>
