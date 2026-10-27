@@ -43,3 +43,10 @@ docker compose exec backend pytest -v
 
 Как развернуть на сервере - в [deploy/README.md](deploy/README.md).
 Стенд работает по HTTP без шифрования: для реального использования нужен домен и HTTPS.
+
+## Безопасность (лекция 7)
+
+- [docs/security](docs/security/README.md) - разбор 7 типичных уязвимостей «ошибка / исправление»,
+  чек-лист аудита своего проекта, шаблоны задач в Сферу, команды локальной проверки.
+- [AGENTS.md](AGENTS.md) - правила безопасности для ИИ-ассистентов.
+- `backend/tests/test_security.py` - автотесты защиты; job `security` в CI - gitleaks, pip-audit, bandit, trivy.
