@@ -34,12 +34,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    # Сторонние actions закреплены по полному SHA коммита, а не по тегу:
+    # тег можно перезаписать (так атаковали trivy-action в марте 2026).
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
       with:
         fetch-depth: 0
-    # 1. Секреты в коде и в истории коммитов (A02, A04)
+    # 1. Секреты в коде и в истории коммитов
     - name: Поиск секретов (gitleaks)
-      uses: gitleaks/gitleaks-action@v2
+      uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7  # v2.3.9
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,11 +57,12 @@ jobs:
       run: |
         python -m pip install --quiet bandit
         bandit -r backend/app
-    # 4. Уязвимости в Docker-образе (A03)
-    - name: Сканирование образа (trivy)
+    # 4. Уязвимости в файлах проекта и Dockerfile (A03)
+    - name: Сканирование проекта (trivy)
       continue-on-error: true
-      uses: aquasecurity/trivy-action@0.28.0
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1  # v0.35.0
       with:
+        version: v0.69.3
         scan-type: fs
         scan-ref: .
         severity: HIGH,CRITICAL
