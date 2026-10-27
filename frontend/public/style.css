@@ -99,6 +99,8 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px s
 .notes li { background: var(--bg); border-radius: 8px; padding: 10px; white-space: pre-wrap; position: relative; }
 .notes .when { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
 .notes .del { position: absolute; top: 6px; right: 6px; background: none; border: none; color: var(--muted); padding: 2px 6px; font-weight: 400; }
+.members { margin-bottom: 16px; white-space: pre-wrap; }
+.actions { margin-top: 12px; }
 .section-title { font-size: 15px; margin: 18px 0 8px; }
 
 .auth { max-width: 380px; margin: 60px auto; }
