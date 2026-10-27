@@ -10,7 +10,7 @@
 
 ```bash
 # через Docker, ничего не устанавливая
-docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo -v
+docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo -v
 ```
 
 Нашёл секрет? Удалите из кода **и смените** ключ/пароль: он уже остался в истории.
@@ -49,9 +49,15 @@ docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep scan --config auto
 ## 4. Docker-образы и файлы проекта - trivy
 
 ```bash
-docker run --rm -v "$PWD:/src" aquasec/trivy fs /src --severity HIGH,CRITICAL
-docker run --rm aquasec/trivy image имя-вашего-образа:latest
+docker run --rm -v "$PWD:/src" aquasec/trivy:0.69.3 fs /src --severity HIGH,CRITICAL
+docker run --rm aquasec/trivy:0.69.3 image имя-вашего-образа:latest
 ```
+
+> **Версии инструментов закреплены не случайно.** В марте 2026 года злоумышленники
+> перезаписали почти все теги `aquasecurity/trivy-action` и выпустили заражённые образы
+> trivy 0.69.4-0.69.6: сканер безопасности сам стал атакой на цепочку поставок.
+> Поэтому в CI сторонние actions закрепляют по полному SHA коммита, а образы - по точной
+> версии, а не `latest`.
 
 ## Как читать результаты
 
