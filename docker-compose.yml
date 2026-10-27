@@ -19,7 +19,8 @@ services:
       DATABASE_URL: postgresql://app:${DB_PASSWORD}@db:5432/app
     depends_on:
       db: { condition: service_healthy }
-    ports: ["8080:8080"]
+    # порт наружу не выставляем: фронтенд ходит в бэкенд по внутренней сети compose
+    expose: ["8080"]
     healthcheck:
       test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"
       interval: 5s
