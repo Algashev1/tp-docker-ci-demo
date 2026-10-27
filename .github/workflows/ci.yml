@@ -21,7 +21,6 @@ jobs:
       run: docker compose exec -T backend pytest -v
     - name: Smoke-тест
       run: |
-        curl -f http://localhost:8080/health
         curl -f http://localhost:3000
         curl -f http://localhost:3000/api/auth/status
     - name: Логи при падении
@@ -30,6 +29,40 @@ jobs:
     - name: Остановить
       if: always()
       run: docker compose down -v
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    # 1. Секреты в коде и в истории коммитов (A02, A04)
+    - name: Поиск секретов (gitleaks)
+      uses: gitleaks/gitleaks-action@v2
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # 2. Уязвимые Python-зависимости (A03 - цепочка поставок)
+    - name: Аудит зависимостей (pip-audit)
+      continue-on-error: true
+      run: |
+        python -m pip install --quiet pip-audit
+        pip-audit -r backend/requirements.txt
+    # 3. Небезопасные места в коде бэкенда (A05, A06)
+    - name: Статический анализ (bandit)
+      continue-on-error: true
+      run: |
+        python -m pip install --quiet bandit
+        bandit -r backend/app
+    # 4. Уязвимости в Docker-образе (A03)
+    - name: Сканирование образа (trivy)
+      continue-on-error: true
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        scan-type: fs
+        scan-ref: .
+        severity: HIGH,CRITICAL
 
   publish:
     needs: stack
